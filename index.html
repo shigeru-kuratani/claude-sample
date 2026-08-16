@@ -1,0 +1,1144 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>サブスクリプション ダッシュボード</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  .viz-root{
+    color-scheme: light;
+    --page-bg:      #f9f9f7;
+    --surface-1:    #fcfcfb;
+    --text-primary: #0b0b0b;
+    --text-secondary:#52514e;
+    --text-muted:   #898781;
+    --grid:         #e1e0d9;
+    --baseline:     #c3c2b7;
+    --border:       rgba(11,11,11,0.10);
+    --shadow:       0 1px 2px rgba(11,11,11,0.04), 0 8px 24px rgba(11,11,11,0.05);
+    --success-text: #006300;
+    --critical-text:#b3261e;
+    --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100;
+    --series-5: #e87ba4; --series-6: #008300; --series-7: #4a3aa7; --series-8: #e34948;
+    --tooltip-bg:   #1a1a19;
+    --tooltip-text: #ffffff;
+    --hover-wash:   rgba(11,11,11,0.045);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:where(:not([data-theme="light"])) .viz-root{
+      color-scheme: dark;
+      --page-bg:      #0d0d0d;
+      --surface-1:    #1a1a19;
+      --text-primary: #ffffff;
+      --text-secondary:#c3c2b7;
+      --text-muted:   #898781;
+      --grid:         #2c2c2a;
+      --baseline:     #383835;
+      --border:       rgba(255,255,255,0.10);
+      --shadow:       0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+      --success-text: #0ca30c;
+      --critical-text:#e66767;
+      --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
+      --series-5: #d55181; --series-6: #008300; --series-7: #9085e9; --series-8: #e66767;
+      --tooltip-bg:   #ffffff;
+      --tooltip-text: #0b0b0b;
+      --hover-wash:   rgba(255,255,255,0.06);
+    }
+  }
+  :root[data-theme="dark"] .viz-root{
+    color-scheme: dark;
+    --page-bg:      #0d0d0d;
+    --surface-1:    #1a1a19;
+    --text-primary: #ffffff;
+    --text-secondary:#c3c2b7;
+    --text-muted:   #898781;
+    --grid:         #2c2c2a;
+    --baseline:     #383835;
+    --border:       rgba(255,255,255,0.10);
+    --shadow:       0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+    --success-text: #0ca30c;
+    --critical-text:#e66767;
+    --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
+    --series-5: #d55181; --series-6: #008300; --series-7: #9085e9; --series-8: #e66767;
+    --tooltip-bg:   #ffffff;
+    --tooltip-text: #0b0b0b;
+    --hover-wash:   rgba(255,255,255,0.06);
+  }
+
+  .viz-root, .viz-root *{ box-sizing:border-box; }
+  .viz-root{
+    background:var(--page-bg);
+    color:var(--text-primary);
+    font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+    min-height:100%;
+    padding: 28px 32px 64px;
+  }
+  .app{ max-width:1320px; margin:0 auto; }
+
+  /* header */
+  .app-header{ display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:22px; flex-wrap:wrap; }
+  .app-header h1{ font-size:22px; font-weight:700; margin:0 0 4px; letter-spacing:-0.01em; }
+  .app-header p{ margin:0; font-size:13.5px; color:var(--text-secondary); }
+  .header-right{ display:flex; align-items:center; gap:10px; }
+  .badge-demo{ font-size:11px; font-weight:600; color:var(--text-secondary); background:var(--hover-wash); border:1px solid var(--border); padding:4px 9px; border-radius:100px; letter-spacing:.02em; }
+  .theme-toggle{ display:flex; border:1px solid var(--border); border-radius:9px; overflow:hidden; }
+  .theme-toggle button{ border:none; background:var(--surface-1); color:var(--text-secondary); font-size:12px; padding:6px 11px; cursor:pointer; font-weight:600; }
+  .theme-toggle button.active{ background:var(--series-1); color:#fff; }
+
+  /* filters */
+  .filters{ display:flex; align-items:center; gap:22px; flex-wrap:wrap; background:var(--surface-1); border:1px solid var(--border); border-radius:14px; padding:12px 18px; margin-bottom:22px; box-shadow:var(--shadow); }
+  .filter-group{ display:flex; align-items:center; gap:9px; }
+  .filter-label{ font-size:11.5px; color:var(--text-muted); font-weight:700; letter-spacing:.03em; text-transform:uppercase; margin-right:2px; }
+  .seg{ display:flex; background:var(--hover-wash); border-radius:9px; padding:3px; gap:2px; }
+  .seg button{ border:none; background:transparent; color:var(--text-secondary); font-size:12.5px; font-weight:600; padding:6px 12px; border-radius:7px; cursor:pointer; white-space:nowrap; transition:background .12s,color .12s; }
+  .seg button:hover{ background:var(--hover-wash); }
+  .seg button.active{ background:var(--surface-1); color:var(--text-primary); box-shadow:0 1px 2px rgba(11,11,11,0.12); }
+  .filters-spacer{ flex:1 1 auto; }
+  .updated-note{ font-size:11.5px; color:var(--text-muted); }
+
+  /* kpis */
+  .kpis{ display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:16px; }
+  .stat-card{ background:var(--surface-1); border:1px solid var(--border); border-radius:14px; padding:16px 18px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:8px; min-width:0; }
+  .stat-label{ font-size:12px; color:var(--text-secondary); font-weight:600; }
+  .stat-value{ font-size:26px; font-weight:700; letter-spacing:-0.01em; font-variant-numeric:proportional-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .stat-sub{ font-size:11.5px; color:var(--text-muted); margin-top:-6px; }
+  .stat-foot{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:2px; }
+  .delta{ font-size:12px; font-weight:700; display:inline-flex; align-items:center; gap:3px; }
+  .delta.good{ color:var(--success-text); }
+  .delta.bad{ color:var(--critical-text); }
+  .delta.neutral{ color:var(--text-muted); font-weight:600;}
+  .delta-vs{ font-size:11px; color:var(--text-muted); font-weight:500; }
+  .spark{ display:block; flex-shrink:0; }
+
+  /* charts grid */
+  .charts-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  .card{ background:var(--surface-1); border:1px solid var(--border); border-radius:14px; padding:18px 18px 14px; box-shadow:var(--shadow); min-width:0; }
+  .card-wide{ grid-column: span 2; }
+  .card-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:6px; }
+  .card-title{ font-size:14.5px; font-weight:700; margin:0 0 2px; }
+  .card-sub{ font-size:12px; color:var(--text-muted); margin:0; }
+  .card-actions{ display:flex; align-items:center; gap:10px; flex-shrink:0; }
+  .legend{ display:flex; gap:12px; flex-wrap:wrap; justify-content:flex-end; }
+  .legend-item{ display:flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text-secondary); font-weight:600; }
+  .legend-swatch{ width:9px; height:9px; border-radius:2px; flex-shrink:0; }
+  .legend-swatch.line{ width:12px; height:2px; border-radius:1px; }
+  .table-toggle{ border:1px solid var(--border); background:transparent; color:var(--text-secondary); font-size:11px; font-weight:600; padding:5px 9px; border-radius:7px; cursor:pointer; white-space:nowrap; }
+  .table-toggle:hover{ background:var(--hover-wash); }
+  .table-toggle.active{ background:var(--series-1); color:#fff; border-color:var(--series-1); }
+
+  .chart-wrap{ position:relative; }
+  .chart-wrap svg{ display:block; width:100%; height:auto; overflow:visible; }
+  .card.showing-table .chart-wrap{ display:none; }
+  .table-wrap{ display:none; max-height:300px; overflow:auto; border-top:1px solid var(--border); margin-top:8px; padding-top:6px; }
+  .card.showing-table .table-wrap{ display:block; }
+  table.data-table{ width:100%; border-collapse:collapse; font-size:12px; }
+  table.data-table th, table.data-table td{ text-align:right; padding:6px 8px; border-bottom:1px solid var(--border); font-variant-numeric:tabular-nums; white-space:nowrap; }
+  table.data-table th:first-child, table.data-table td:first-child{ text-align:left; font-variant-numeric:normal; }
+  table.data-table th{ color:var(--text-muted); font-weight:700; font-size:11px; position:sticky; top:0; background:var(--surface-1); }
+
+  .axis text{ fill:var(--text-muted); font-size:10.5px; font-family:inherit; }
+  .gridline{ stroke:var(--grid); stroke-width:1; shape-rendering:crispEdges; }
+  .baseline{ stroke:var(--baseline); stroke-width:1; shape-rendering:crispEdges; }
+  .crosshair-line{ stroke:var(--baseline); stroke-width:1; pointer-events:none; }
+  .hit-rect{ fill:transparent; }
+  .hit-rect:hover{ cursor:crosshair; }
+
+  .tooltip{ position:absolute; pointer-events:none; background:var(--tooltip-bg); color:var(--tooltip-text); border-radius:9px; padding:9px 11px; font-size:11.5px; box-shadow:0 6px 20px rgba(0,0,0,0.25); opacity:0; transform:translate(-9999px,-9999px); transition:opacity .08s; z-index:20; min-width:120px; }
+  .tooltip.show{ opacity:1; }
+  .tooltip-date{ font-weight:700; margin-bottom:5px; color:var(--tooltip-text); }
+  .tooltip-row{ display:flex; align-items:center; gap:7px; justify-content:space-between; padding:1.5px 0; }
+  .tooltip-row .key{ display:flex; align-items:center; gap:6px; color:var(--tooltip-text); opacity:.82; }
+  .tooltip-row .keyline{ width:10px; height:2px; border-radius:1px; flex-shrink:0; }
+  .tooltip-row .val{ font-weight:700; font-variant-numeric:tabular-nums; }
+
+  .breakdown-bar{ display:flex; height:34px; border-radius:8px; overflow:hidden; gap:2px; margin:8px 0 14px; }
+  .breakdown-seg{ height:100%; }
+  .breakdown-list{ display:flex; flex-direction:column; gap:9px; }
+  .breakdown-row{ display:flex; align-items:center; gap:9px; font-size:12.5px; }
+  .breakdown-row .dot{ width:9px; height:9px; border-radius:2px; flex-shrink:0; }
+  .breakdown-row .name{ color:var(--text-secondary); font-weight:600; flex:1 1 auto; }
+  .breakdown-row .val{ font-weight:700; font-variant-numeric:tabular-nums; }
+  .breakdown-row .pct{ color:var(--text-muted); font-variant-numeric:tabular-nums; width:44px; text-align:right; }
+
+  .empty-note{ font-size:12px; color:var(--text-muted); padding:20px 0; text-align:center; }
+
+  .app-footer{ margin-top:26px; font-size:11.5px; color:var(--text-muted); text-align:center; }
+
+  @media (max-width: 980px){
+    .kpis{ grid-template-columns:repeat(2,1fr); }
+    .charts-grid{ grid-template-columns:1fr; }
+    .card-wide{ grid-column:span 1; }
+    .filters{ align-items:flex-start; }
+  }
+  @media (max-width: 560px){
+    .kpis{ grid-template-columns:1fr; }
+    .viz-root{ padding:18px 14px 40px; }
+  }
+</style>
+
+
+</head>
+<body>
+<div class="viz-root">
+<div class="app">
+
+  <div class="app-header">
+    <div>
+      <h1>サブスクリプション ダッシュボード</h1>
+      <p>モバイルアプリ契約状況の推移をひと目で確認できます</p>
+    </div>
+    <div class="header-right">
+      <span class="badge-demo">DEMO DATA</span>
+      <div class="theme-toggle" id="themeToggle">
+        <button data-theme-choice="light">Light</button>
+        <button data-theme-choice="dark">Dark</button>
+        <button data-theme-choice="system" class="active">System</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="filters">
+    <div class="filter-group">
+      <span class="filter-label">期間</span>
+      <div class="seg" id="rangeSeg" role="group" aria-label="期間で絞り込み">
+        <button data-range="7">7日間</button>
+        <button data-range="30" class="active">30日間</button>
+        <button data-range="90">90日間</button>
+        <button data-range="180">180日間</button>
+        <button data-range="365">1年間</button>
+        <button data-range="all">全期間</button>
+      </div>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">OS</span>
+      <div class="seg" id="platformSeg" role="group" aria-label="OSで絞り込み">
+        <button data-platform="all" class="active">すべて</button>
+        <button data-platform="ios">iOS</button>
+        <button data-platform="android">Android</button>
+      </div>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">プラン</span>
+      <div class="seg" id="planSeg" role="group" aria-label="プランで絞り込み">
+        <button data-plan="all" class="active">すべて</button>
+        <button data-plan="monthly">月額</button>
+        <button data-plan="annual">年額</button>
+      </div>
+    </div>
+    <div class="filters-spacer"></div>
+    <div class="updated-note" id="updatedNote"></div>
+  </div>
+
+  <div class="kpis" id="kpiRow"></div>
+
+  <div class="charts-grid">
+    <div class="card card-wide" id="card-active">
+      <div class="card-head">
+        <div>
+          <p class="card-title">有効サブスク数の推移</p>
+          <p class="card-sub" id="activeSub"></p>
+        </div>
+        <div class="card-actions">
+          <div class="legend" id="legend-active"></div>
+          <button class="table-toggle" data-target="active">表で見る</button>
+        </div>
+      </div>
+      <div class="chart-wrap" id="chart-active"></div>
+      <div class="table-wrap" id="table-active"></div>
+    </div>
+
+    <div class="card" id="card-breakdown">
+      <div class="card-head">
+        <div>
+          <p class="card-title">内訳</p>
+          <p class="card-sub" id="breakdownSub"></p>
+        </div>
+        <div class="card-actions">
+          <button class="table-toggle" data-target="breakdown">表で見る</button>
+        </div>
+      </div>
+      <div class="chart-wrap" id="chart-breakdown"></div>
+      <div class="table-wrap" id="table-breakdown"></div>
+    </div>
+
+    <div class="card" id="card-newchurn">
+      <div class="card-head">
+        <div>
+          <p class="card-title">新規 / 解約</p>
+          <p class="card-sub" id="newchurnSub"></p>
+        </div>
+        <div class="card-actions">
+          <div class="legend" id="legend-newchurn"></div>
+          <button class="table-toggle" data-target="newchurn">表で見る</button>
+        </div>
+      </div>
+      <div class="chart-wrap" id="chart-newchurn"></div>
+      <div class="table-wrap" id="table-newchurn"></div>
+    </div>
+
+    <div class="card" id="card-mrr">
+      <div class="card-head">
+        <div>
+          <p class="card-title">MRR推移</p>
+          <p class="card-sub">月次経常収益（Monthly Recurring Revenue）</p>
+        </div>
+        <div class="card-actions">
+          <button class="table-toggle" data-target="mrr">表で見る</button>
+        </div>
+      </div>
+      <div class="chart-wrap" id="chart-mrr"></div>
+      <div class="table-wrap" id="table-mrr"></div>
+    </div>
+
+    <div class="card" id="card-trial">
+      <div class="card-head">
+        <div>
+          <p class="card-title">トライアル転換率</p>
+          <p class="card-sub">開始から14日後時点の転換率(推定)</p>
+        </div>
+        <div class="card-actions">
+          <button class="table-toggle" data-target="trial">表で見る</button>
+        </div>
+      </div>
+      <div class="chart-wrap" id="chart-trial"></div>
+      <div class="table-wrap" id="table-trial"></div>
+    </div>
+  </div>
+
+  <div class="app-footer">全ての数値はデモ用のダミーデータです。実際の契約状況を反映するものではありません。</div>
+
+</div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============================== THEME ============================== */
+  var root = document.documentElement;
+  var themeToggle = document.getElementById('themeToggle');
+  themeToggle.addEventListener('click', function(e){
+    var btn = e.target.closest('button[data-theme-choice]');
+    if(!btn) return;
+    var choice = btn.getAttribute('data-theme-choice');
+    if(choice === 'system'){ root.removeAttribute('data-theme'); }
+    else{ root.setAttribute('data-theme', choice); }
+    themeToggle.querySelectorAll('button').forEach(function(b){ b.classList.toggle('active', b===btn); });
+  });
+
+  /* ============================== RNG ============================== */
+  function mulberry32(a){
+    return function(){
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      var t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  var rng = mulberry32(20260816);
+  function noise(sigma){ return 1 + (rng() - 0.5) * 2 * sigma; }
+  function randInt(min, max){ return Math.floor(min + rng() * (max - min + 1)); }
+
+  /* ============================== DATE HELPERS ============================== */
+  var MS_DAY = 86400000;
+  var DATA_END = new Date(2026, 7, 16); // 2026-08-16
+  var N_DAYS = 730;
+  var DATA_START = new Date(DATA_END.getTime() - (N_DAYS - 1) * MS_DAY);
+  var DATES = [];
+  for(var i=0;i<N_DAYS;i++){ DATES.push(new Date(DATA_START.getTime() + i*MS_DAY)); }
+
+  function fmtDateShort(d){ return (d.getMonth()+1) + '/' + d.getDate(); }
+  function fmtDateFull(d){ return d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate(); }
+  function fmtMonth(d){ return d.getFullYear() + '/' + (d.getMonth()+1); }
+
+  /* ============================== NUMBER FORMAT ============================== */
+  function fmtCompactJP(n){
+    var sign = n < 0 ? '-' : '';
+    var abs = Math.abs(n);
+    if(abs >= 1e8){ var v = abs/1e8; return sign + (v>=100? v.toFixed(0): v.toFixed(1).replace(/\.0$/,'')) + '億'; }
+    if(abs >= 1e4){ var v2 = abs/1e4; return sign + (v2>=100? v2.toFixed(0): v2.toFixed(1).replace(/\.0$/,'')) + '万'; }
+    return sign + Math.round(abs).toLocaleString('ja-JP');
+  }
+  function fmtInt(n){ return Math.round(n).toLocaleString('ja-JP'); }
+  function fmtYen(n){ return '¥' + fmtCompactJP(n); }
+  function fmtYenFull(n){ return '¥' + fmtInt(n); }
+  function fmtPct(n, dp){ return n.toFixed(dp==null?1:dp) + '%'; }
+
+  /* ============================== SEGMENT CONFIG ============================== */
+  var SEGMENTS = [
+    { key:'ios-monthly',     platform:'ios',     plan:'monthly', label:'iOS 月額',     base0:9000, growth:0.00085, churn:0.0026, trialShare:0.60, price:980,  baseConv:0.30, convTrend:0.00008, renewalPhase:null },
+    { key:'ios-annual',      platform:'ios',     plan:'annual',  label:'iOS 年額',     base0:3200, growth:0.00130, churn:0.00055,trialShare:0.40, price:9800, baseConv:0.38, convTrend:0.00010, renewalPhase:6 },
+    { key:'android-monthly', platform:'android', plan:'monthly', label:'Android 月額', base0:7600, growth:0.00060, churn:0.00300,trialShare:0.55, price:880,  baseConv:0.27, convTrend:0.00006, renewalPhase:null },
+    { key:'android-annual',  platform:'android', plan:'annual',  label:'Android 年額', base0:2400, growth:0.00100, churn:0.00060,trialShare:0.32, price:8800, baseConv:0.34, convTrend:0.00009, renewalPhase:19 }
+  ];
+  var SEG_COLOR = { 'ios-monthly':'var(--series-1)', 'ios-annual':'var(--series-2)', 'android-monthly':'var(--series-3)', 'android-annual':'var(--series-4)' };
+  var PLATFORM_COLOR = { ios:'var(--series-1)', android:'var(--series-2)' };
+  var PLATFORM_LABEL = { ios:'iOS', android:'Android' };
+  var PLAN_COLOR = { monthly:'var(--series-3)', annual:'var(--series-7)' };
+  var PLAN_LABEL = { monthly:'月額', annual:'年額' };
+
+  var WEEKLY_NEW   = [1.15, 0.82, 0.85, 0.90, 0.95, 1.05, 1.28]; // Sun..Sat
+  var WEEKLY_CHURN = [1.05, 0.95, 0.95, 0.97, 0.98, 1.00, 1.10];
+
+  function seasonalMult(month){ // 0-indexed month
+    if(month === 0) return 1.22;   // January - new year resolutions
+    if(month === 3) return 1.12;   // April - new fiscal year in Japan
+    if(month === 11) return 1.08;  // December - holidays
+    return 1.0;
+  }
+
+  /* spike events: marketing campaigns / feature boosts affecting "new" signups */
+  var SPIKE_EVENTS = [];
+  (function(){
+    var count = 11;
+    for(var i=0;i<count;i++){
+      var start = randInt(20, N_DAYS - 10);
+      var duration = randInt(1, 3);
+      var magnitude = 1.6 + rng()*1.8; // 1.6x - 3.4x
+      var segChoice = rng();
+      var segs;
+      if(segChoice < 0.4) segs = ['ios-monthly','ios-annual'];
+      else if(segChoice < 0.7) segs = ['android-monthly','android-annual'];
+      else segs = SEGMENTS.map(function(s){return s.key;});
+      SPIKE_EVENTS.push({ start:start, duration:duration, magnitude:magnitude, segs:segs });
+    }
+  })();
+
+  /* conversion-rate dip events (e.g. trial length / pricing policy changes) */
+  var CONV_DIP_EVENTS = [];
+  (function(){
+    var count = 3;
+    for(var i=0;i<count;i++){
+      var start = randInt(60, N_DAYS - 40);
+      CONV_DIP_EVENTS.push({ start:start, duration:randInt(10,20), depth: 0.65 + rng()*0.15 });
+    }
+  })();
+
+  function spikeMultFor(segKey, dayIdx){
+    var m = 1;
+    for(var i=0;i<SPIKE_EVENTS.length;i++){
+      var ev = SPIKE_EVENTS[i];
+      if(ev.segs.indexOf(segKey) === -1) continue;
+      if(dayIdx >= ev.start && dayIdx < ev.start + ev.duration){
+        var t = (dayIdx - ev.start) / ev.duration;
+        var eased = ev.magnitude * (1 - t*0.35); // slight decay across the spike window
+        m *= eased;
+      }
+    }
+    return m;
+  }
+  function convDipFor(dayIdx){
+    var m = 1;
+    for(var i=0;i<CONV_DIP_EVENTS.length;i++){
+      var ev = CONV_DIP_EVENTS[i];
+      if(dayIdx >= ev.start && dayIdx < ev.start + ev.duration){ m *= ev.depth; }
+    }
+    return m;
+  }
+
+  /* ============================== GENERATE DAILY SERIES ============================== */
+  var DATA = {}; // key -> { active[], newv[], churn[], trialStart[], trialConv[], mrr[] }
+  var LAG = 14;
+
+  SEGMENTS.forEach(function(seg){
+    var active = seg.base0;
+    var arr = { active:[], newv:[], churn:[], trialStart:[], trialConv:[], mrr:[] };
+    for(var d=0; d<N_DAYS; d++){
+      var date = DATES[d];
+      var dow = date.getDay();
+      var monthMult = seasonalMult(date.getMonth());
+
+      var expectedNew = active * (seg.churn + seg.growth);
+      var newVal = expectedNew * WEEKLY_NEW[dow] * monthMult * spikeMultFor(seg.key, d) * noise(0.14);
+      newVal = Math.max(0, Math.round(newVal));
+
+      var renewalMult = 1;
+      if(seg.renewalPhase != null && (d % 30) === seg.renewalPhase){ renewalMult = 2.3; }
+      var expectedChurn = active * seg.churn;
+      var churnVal = expectedChurn * WEEKLY_CHURN[dow] * renewalMult * noise(0.16);
+      churnVal = Math.max(0, Math.min(Math.round(churnVal), active));
+
+      active = active + newVal - churnVal;
+
+      var trialShareToday = seg.trialShare * noise(0.06);
+      var trialStartVal = Math.max(0, Math.round(newVal * trialShareToday));
+
+      var convRate = seg.baseConv + seg.convTrend * d;
+      convRate *= convDipFor(d);
+      convRate *= noise(0.05);
+      convRate = Math.min(0.7, Math.max(0.08, convRate));
+      var trialConvVal = 0;
+      if(d >= LAG){ trialConvVal = Math.max(0, Math.round(arr.trialStart[d-LAG] * convRate)); }
+
+      var unitPrice = seg.plan === 'monthly' ? seg.price : seg.price/12;
+      var mrrVal = active * unitPrice;
+
+      arr.active.push(active);
+      arr.newv.push(newVal);
+      arr.churn.push(churnVal);
+      arr.trialStart.push(trialStartVal);
+      arr.trialConv.push(trialConvVal);
+      arr.mrr.push(mrrVal);
+    }
+    DATA[seg.key] = arr;
+  });
+
+  /* ============================== STATE ============================== */
+  var state = { rangeKey:'30', platform:'all', plan:'all' };
+
+  function activeSegments(){
+    return SEGMENTS.filter(function(s){
+      if(state.platform !== 'all' && s.platform !== state.platform) return false;
+      if(state.plan !== 'all' && s.plan !== state.plan) return false;
+      return true;
+    });
+  }
+
+  function rangeDays(){ return state.rangeKey === 'all' ? N_DAYS : parseInt(state.rangeKey, 10); }
+
+  function rangeIndices(){
+    var rd = rangeDays();
+    var endIdx = N_DAYS - 1;
+    var startIdx = Math.max(0, endIdx - rd + 1);
+    return { startIdx: startIdx, endIdx: endIdx };
+  }
+  function prevRangeIndices(){
+    var cur = rangeIndices();
+    var len = cur.endIdx - cur.startIdx + 1;
+    var prevEnd = cur.startIdx - 1;
+    var prevStart = prevEnd - len + 1;
+    if(prevStart < 0) return null;
+    return { startIdx: prevStart, endIdx: prevEnd };
+  }
+
+  function sumMetric(segs, metric, r){
+    var total = 0;
+    for(var i=r.startIdx;i<=r.endIdx;i++){
+      for(var s=0;s<segs.length;s++){ total += DATA[segs[s].key][metric][i]; }
+    }
+    return total;
+  }
+  function valueAt(segs, metric, idx){
+    var total = 0;
+    for(var s=0;s<segs.length;s++){ total += DATA[segs[s].key][metric][idx]; }
+    return total;
+  }
+  function seriesSum(segs, metric, r){
+    var out = [];
+    for(var i=r.startIdx;i<=r.endIdx;i++){ out.push(valueAt(segs, metric, i)); }
+    return out;
+  }
+
+  /* ============================== BUCKETING (for bar chart) ============================== */
+  function bucketConfig(rd){
+    if(rd <= 35) return 'daily';
+    if(rd <= 200) return 'weekly';
+    return 'monthly';
+  }
+  function buildBuckets(r, mode){
+    var buckets = [];
+    if(mode === 'daily'){
+      for(var i=r.startIdx;i<=r.endIdx;i++){ buckets.push({ start:i, end:i, label: fmtDateShort(DATES[i]) }); }
+    } else if(mode === 'weekly'){
+      var i2 = r.startIdx;
+      while(i2 <= r.endIdx){
+        var end = Math.min(i2+6, r.endIdx);
+        buckets.push({ start:i2, end:end, label: fmtDateShort(DATES[i2]) });
+        i2 = end + 1;
+      }
+    } else {
+      var cursor = r.startIdx;
+      while(cursor <= r.endIdx){
+        var d0 = DATES[cursor];
+        var y = d0.getFullYear(), m = d0.getMonth();
+        var monthEndDate = new Date(y, m+1, 0);
+        var monthEndIdx = Math.min(r.endIdx, Math.round((monthEndDate - DATA_START)/MS_DAY));
+        buckets.push({ start:cursor, end:monthEndIdx, label: fmtMonth(d0) });
+        cursor = monthEndIdx + 1;
+      }
+    }
+    return buckets;
+  }
+  function bucketSum(segs, metric, bucket){
+    var total = 0;
+    for(var i=bucket.start;i<=bucket.end;i++){ total += valueAt(segs, metric, i); }
+    return total;
+  }
+
+  /* ============================== SVG HELPERS ============================== */
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+  function svgEl(tag, attrs){
+    var el = document.createElementNS(SVG_NS, tag);
+    if(attrs){ for(var k in attrs){ el.setAttribute(k, attrs[k]); } }
+    return el;
+  }
+  function niceMax(v){
+    if(v <= 0) return 10;
+    var mag = Math.pow(10, Math.floor(Math.log10(v)));
+    var norm = v / mag;
+    var step = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10;
+    return step * mag;
+  }
+  function scaleLinear(domain, range){
+    var d0=domain[0], d1=domain[1], r0=range[0], r1=range[1];
+    var span = (d1 - d0) || 1;
+    return function(v){ return r0 + (v - d0) / span * (r1 - r0); };
+  }
+  function clientToSvgX(evt, svg, vbW, padL, padR, plotW){
+    var rect = svg.getBoundingClientRect();
+    var ratio = vbW / rect.width;
+    var x = (evt.clientX - rect.left) * ratio;
+    return Math.min(Math.max(x, padL), padL + plotW);
+  }
+
+  var tooltipPool = {};
+  function getTooltip(mountId){
+    if(tooltipPool[mountId]) return tooltipPool[mountId];
+    var t = document.createElement('div');
+    t.className = 'tooltip';
+    document.getElementById(mountId).appendChild(t);
+    tooltipPool[mountId] = t;
+    return t;
+  }
+  function positionTooltip(tt, wrapEl, evt){
+    var wrapRect = wrapEl.getBoundingClientRect();
+    var x = evt.clientX - wrapRect.left + 14;
+    var y = evt.clientY - wrapRect.top - 14;
+    if(x + 170 > wrapRect.width){ x = evt.clientX - wrapRect.left - 170 - 14; }
+    tt.style.transform = 'translate(' + Math.max(0,x) + 'px,' + Math.max(0,y) + 'px)';
+  }
+
+  function buildLegend(mountId, items){
+    var el = document.getElementById(mountId);
+    if(!el) return;
+    el.innerHTML = '';
+    if(items.length < 2) return; // single series needs no legend box
+    items.forEach(function(it){
+      var row = document.createElement('span');
+      row.className = 'legend-item';
+      var sw = document.createElement('span');
+      sw.className = 'legend-swatch' + (it.line ? ' line' : '');
+      sw.style.background = it.line ? 'none' : it.color;
+      sw.style.borderTop = it.line ? '2px solid ' + it.color : 'none';
+      if(it.line) sw.style.background = it.color;
+      row.appendChild(sw);
+      var txt = document.createElement('span');
+      txt.textContent = it.label;
+      row.appendChild(txt);
+      el.appendChild(row);
+    });
+  }
+
+  function renderTable(mountId, headers, rows){
+    var el = document.getElementById(mountId);
+    el.innerHTML = '';
+    var table = document.createElement('table');
+    table.className = 'data-table';
+    var thead = document.createElement('thead');
+    var trh = document.createElement('tr');
+    headers.forEach(function(h){ var th=document.createElement('th'); th.textContent=h; trh.appendChild(th); });
+    thead.appendChild(trh);
+    table.appendChild(thead);
+    var tbody = document.createElement('tbody');
+    rows.forEach(function(r){
+      var tr = document.createElement('tr');
+      r.forEach(function(c){ var td=document.createElement('td'); td.textContent=c; tr.appendChild(td); });
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    el.appendChild(table);
+  }
+
+  /* ============================== TIME SERIES CHART (line / area / stacked-area) ============================== */
+  function renderTimeSeries(mountId, dates, seriesList, opts){
+    opts = opts || {};
+    var stacked = !!opts.stacked;
+    var mount = document.getElementById(mountId);
+    mount.innerHTML = '';
+    var W = 900, H = 300, padL = 54, padR = 16, padT = 14, padB = 26;
+    var plotW = W - padL - padR, plotH = H - padT - padB;
+
+    var svg = svgEl('svg', { viewBox: '0 0 ' + W + ' ' + H, preserveAspectRatio:'xMidYMid meet' });
+    mount.appendChild(svg);
+
+    var n = dates.length;
+    var x = scaleLinear([0, Math.max(1,n-1)], [padL, padL+plotW]);
+
+    var maxY = 0;
+    if(stacked){
+      for(var i=0;i<n;i++){
+        var tot = 0;
+        for(var s=0;s<seriesList.length;s++){ tot += seriesList[s].values[i]; }
+        if(tot > maxY) maxY = tot;
+      }
+    } else {
+      seriesList.forEach(function(s){ s.values.forEach(function(v){ if(v>maxY) maxY=v; }); });
+    }
+    var yMax = niceMax(maxY * 1.12 || 10);
+    var y = scaleLinear([0, yMax], [padT+plotH, padT]);
+
+    var gGrid = svgEl('g', { class:'axis' });
+    var ticks = 4;
+    for(var t=0;t<=ticks;t++){
+      var val = yMax * t / ticks;
+      var yy = y(val);
+      gGrid.appendChild(svgEl('line', { class: t===0?'baseline':'gridline', x1:padL, x2:padL+plotW, y1:yy, y2:yy }));
+      var lbl = svgEl('text', { x: padL-8, y: yy+3, 'text-anchor':'end' });
+      lbl.textContent = opts.axisFmt ? opts.axisFmt(val) : fmtCompactJP(val);
+      gGrid.appendChild(lbl);
+    }
+    svg.appendChild(gGrid);
+
+    var xTickCount = Math.min(6, n);
+    var gX = svgEl('g', { class:'axis' });
+    for(var xt=0; xt<xTickCount; xt++){
+      var idx = Math.round(xt * (n-1) / Math.max(1,xTickCount-1));
+      var xx = x(idx);
+      var lblx = svgEl('text', { x:xx, y: padT+plotH+18, 'text-anchor': xt===0?'start':(xt===xTickCount-1?'end':'middle') });
+      lblx.textContent = opts.xFmt ? opts.xFmt(dates[idx]) : fmtDateShort(dates[idx]);
+      gX.appendChild(lblx);
+    }
+    svg.appendChild(gX);
+
+    var cumBottom = new Array(n).fill(0);
+    seriesList.forEach(function(s, si){
+      var top = [];
+      if(stacked){
+        for(var i2=0;i2<n;i2++){ top.push(cumBottom[i2] + s.values[i2]); }
+      } else {
+        top = s.values;
+      }
+      var areaPts = [];
+      for(var i3=0;i3<n;i3++){ areaPts.push(x(i3) + ',' + y(top[i3])); }
+      var bottomPts = [];
+      if(stacked){
+        for(var i4=n-1;i4>=0;i4--){ bottomPts.push(x(i4) + ',' + y(cumBottom[i4])); }
+      } else {
+        bottomPts.push(x(n-1) + ',' + y(0));
+        bottomPts.push(x(0) + ',' + y(0));
+      }
+      var areaPath = 'M' + areaPts.join(' L') + ' L' + bottomPts.join(' L') + ' Z';
+      svg.appendChild(svgEl('path', { d:areaPath, fill: s.color, 'fill-opacity':0.12, stroke:'none' }));
+      var linePath = 'M' + areaPts.join(' L');
+      svg.appendChild(svgEl('path', { d:linePath, fill:'none', stroke:s.color, 'stroke-width':2, 'stroke-linejoin':'round', 'stroke-linecap':'round' }));
+
+      if(stacked){ for(var i5=0;i5<n;i5++){ cumBottom[i5] = top[i5]; } }
+    });
+
+    // end markers
+    seriesList.forEach(function(s, si){
+      var lastVal = stacked ? (function(){ var tot=0; for(var k=0;k<=si;k++){ tot += seriesList[k].values[n-1]; } return tot; })() : s.values[n-1];
+      var dot = svgEl('circle', { cx:x(n-1), cy:y(lastVal), r:4, fill:s.color, stroke:'var(--surface-1)', 'stroke-width':2 });
+      svg.appendChild(dot);
+    });
+
+    // crosshair + tooltip
+    var crosshair = svgEl('line', { class:'crosshair-line', x1:padL, x2:padL, y1:padT, y2:padT+plotH, opacity:0 });
+    svg.appendChild(crosshair);
+    var hoverDots = seriesList.map(function(s){ return svgEl('circle', { r:4, fill:s.color, stroke:'var(--surface-1)', 'stroke-width':2, opacity:0 }); });
+    hoverDots.forEach(function(d){ svg.appendChild(d); });
+
+    var hitRect = svgEl('rect', { class:'hit-rect', x:padL, y:padT, width:plotW, height:plotH });
+    svg.appendChild(hitRect);
+    var tt = getTooltip(mountId);
+
+    function onMove(evt){
+      var svgX = clientToSvgX(evt, svg, W, padL, padR, plotW);
+      var idx = Math.round((svgX - padL) / plotW * (n-1));
+      idx = Math.max(0, Math.min(n-1, idx));
+      crosshair.setAttribute('x1', x(idx)); crosshair.setAttribute('x2', x(idx)); crosshair.setAttribute('opacity', 1);
+      var cum = 0;
+      var rows = [];
+      seriesList.forEach(function(s, si){
+        var v = s.values[idx];
+        var topV = stacked ? cum + v : v;
+        hoverDots[si].setAttribute('cx', x(idx));
+        hoverDots[si].setAttribute('cy', y(topV));
+        hoverDots[si].setAttribute('opacity', 1);
+        if(stacked) cum += v;
+        rows.push({ label:s.label, color:s.color, value:v });
+      });
+      var html = '<div class="tooltip-date">' + fmtDateFull(dates[idx]) + '</div>';
+      rows.forEach(function(r2){
+        html += '<div class="tooltip-row"><span class="key"><span class="keyline" style="background:' + r2.color + '"></span>' + r2.label + '</span><span class="val">' + (opts.tooltipFmt ? opts.tooltipFmt(r2.value) : fmtInt(r2.value)) + '</span></div>';
+      });
+      tt.innerHTML = html;
+      tt.classList.add('show');
+      positionTooltip(tt, mount, evt);
+    }
+    function onLeave(){
+      crosshair.setAttribute('opacity', 0);
+      hoverDots.forEach(function(d){ d.setAttribute('opacity', 0); });
+      tt.classList.remove('show');
+    }
+    hitRect.addEventListener('pointermove', onMove);
+    hitRect.addEventListener('pointerleave', onLeave);
+  }
+
+  /* ============================== GROUPED BAR CHART ============================== */
+  function renderGroupedBar(mountId, buckets, seriesList, opts){
+    opts = opts || {};
+    var mount = document.getElementById(mountId);
+    mount.innerHTML = '';
+    var W = 900, H = 300, padL = 54, padR = 16, padT = 14, padB = 26;
+    var plotW = W - padL - padR, plotH = H - padT - padB;
+    var svg = svgEl('svg', { viewBox:'0 0 '+W+' '+H, preserveAspectRatio:'xMidYMid meet' });
+    mount.appendChild(svg);
+
+    var n = buckets.length;
+    var maxY = 0;
+    seriesList.forEach(function(s){ s.values.forEach(function(v){ if(v>maxY) maxY = v; }); });
+    var yMax = niceMax(maxY * 1.15 || 10);
+    var y = scaleLinear([0,yMax], [padT+plotH, padT]);
+
+    var gGrid = svgEl('g', { class:'axis' });
+    var ticks = 4;
+    for(var t=0;t<=ticks;t++){
+      var val = yMax*t/ticks;
+      var yy = y(val);
+      gGrid.appendChild(svgEl('line', { class: t===0?'baseline':'gridline', x1:padL, x2:padL+plotW, y1:yy, y2:yy }));
+      var lbl = svgEl('text', { x:padL-8, y:yy+3, 'text-anchor':'end' });
+      lbl.textContent = fmtCompactJP(val);
+      gGrid.appendChild(lbl);
+    }
+    svg.appendChild(gGrid);
+
+    var groupW = plotW / n;
+    var maxBarThick = 22;
+    var nSeries = seriesList.length;
+    var gap = 3;
+    var barW = Math.min(maxBarThick, (groupW - gap*(nSeries+1)) / nSeries);
+    if(barW < 2) barW = 2;
+    var groupInnerW = barW*nSeries + gap*(nSeries-1);
+
+    var labelStep = Math.max(1, Math.ceil(n/10));
+    var gX = svgEl('g', { class:'axis' });
+    for(var bi=0; bi<n; bi++){
+      if(bi % labelStep !== 0 && bi !== n-1) continue;
+      var cx = padL + groupW*bi + groupW/2;
+      var lblx = svgEl('text', { x:cx, y:padT+plotH+18, 'text-anchor':'middle' });
+      lblx.textContent = buckets[bi].label;
+      gX.appendChild(lblx);
+    }
+    svg.appendChild(gX);
+
+    var tt = getTooltip(mountId);
+
+    for(var bidx=0; bidx<n; bidx++){
+      var groupX0 = padL + groupW*bidx + (groupW - groupInnerW)/2;
+      for(var si=0; si<nSeries; si++){
+        var s = seriesList[si];
+        var v = s.values[bidx];
+        var barH = (padT+plotH) - y(v);
+        var bx = groupX0 + si*(barW+gap);
+        var by = y(v);
+        var rect = svgEl('rect', { x:bx, y:by, width:barW, height:Math.max(0,barH), rx:3, ry:3, fill:s.color });
+        rect.dataset.bidx = bidx;
+        svg.appendChild(rect);
+        var hit = svgEl('rect', { x:bx-2, y:padT, width:barW+4, height:plotH, fill:'transparent' });
+        (function(bidxC, s2){
+          hit.addEventListener('pointermove', function(evt){
+            var html = '<div class="tooltip-date">' + buckets[bidxC].label + (opts.rangeLabel ? ' 週/月' : '') + '</div>';
+            seriesList.forEach(function(ss){
+              html += '<div class="tooltip-row"><span class="key"><span class="keyline" style="background:'+ss.color+'"></span>'+ss.label+'</span><span class="val">'+fmtInt(ss.values[bidxC])+'</span></div>';
+            });
+            tt.innerHTML = html;
+            tt.classList.add('show');
+            positionTooltip(tt, mount, evt);
+          });
+          hit.addEventListener('pointerleave', function(){ tt.classList.remove('show'); });
+        })(bidx, s);
+        svg.appendChild(hit);
+      }
+    }
+  }
+
+  /* ============================== BREAKDOWN (stacked horizontal bar) ============================== */
+  function renderBreakdown(mountId, segs){
+    var mount = document.getElementById(mountId);
+    mount.innerHTML = '';
+    var r = rangeIndices();
+    var items = segs.map(function(s){ return { key:s.key, label:s.label, color:SEG_COLOR[s.key], value: DATA[s.key].active[r.endIdx] }; });
+    var total = items.reduce(function(a,b){return a+b.value;}, 0) || 1;
+
+    var barWrap = document.createElement('div');
+    barWrap.className = 'breakdown-bar';
+    items.forEach(function(it){
+      var seg = document.createElement('div');
+      seg.className = 'breakdown-seg';
+      seg.style.background = it.color;
+      seg.style.width = (it.value/total*100) + '%';
+      seg.title = it.label + ': ' + fmtInt(it.value);
+      barWrap.appendChild(seg);
+    });
+    mount.appendChild(barWrap);
+
+    var list = document.createElement('div');
+    list.className = 'breakdown-list';
+    items.slice().sort(function(a,b){return b.value-a.value;}).forEach(function(it){
+      var row = document.createElement('div');
+      row.className = 'breakdown-row';
+      var dot = document.createElement('span'); dot.className='dot'; dot.style.background = it.color;
+      var name = document.createElement('span'); name.className='name'; name.textContent = it.label;
+      var val = document.createElement('span'); val.className='val'; val.textContent = fmtInt(it.value);
+      var pct = document.createElement('span'); pct.className='pct'; pct.textContent = (it.value/total*100).toFixed(1)+'%';
+      row.appendChild(dot); row.appendChild(name); row.appendChild(val); row.appendChild(pct);
+      list.appendChild(row);
+    });
+    mount.appendChild(list);
+
+    renderTable('table-breakdown', ['セグメント','有効サブスク数','構成比'], items.slice().sort(function(a,b){return b.value-a.value;}).map(function(it){
+      return [it.label, fmtInt(it.value), (it.value/total*100).toFixed(1)+'%'];
+    }));
+  }
+
+  /* ============================== SPARKLINE ============================== */
+  function renderSparkline(container, values, color){
+    container.innerHTML = '';
+    var W=100, H=30;
+    var svg = svgEl('svg', { viewBox:'0 0 '+W+' '+H, width:100, height:30, class:'spark' });
+    var n = values.length;
+    if(n < 2){ return; }
+    var min = Math.min.apply(null, values), max = Math.max.apply(null, values);
+    if(min === max){ min -= 1; max += 1; }
+    var x = scaleLinear([0,n-1],[2,W-2]);
+    var y = scaleLinear([min,max],[H-4,4]);
+    var pts = [];
+    for(var i=0;i<n;i++){ pts.push(x(i)+','+y(values[i])); }
+    var muted = 'var(--text-muted)';
+    svg.appendChild(svgEl('polyline', { points: pts.join(' '), fill:'none', stroke:muted, 'stroke-width':1.5, 'stroke-linejoin':'round', 'stroke-linecap':'round', opacity:0.6 }));
+    var lastSeg = pts.slice(-4).join(' ');
+    svg.appendChild(svgEl('polyline', { points:lastSeg, fill:'none', stroke:color, 'stroke-width':1.5, 'stroke-linejoin':'round', 'stroke-linecap':'round' }));
+    svg.appendChild(svgEl('circle', { cx:x(n-1), cy:y(values[n-1]), r:2.5, fill:color }));
+    container.appendChild(svg);
+  }
+
+  /* ============================== KPI ROW ============================== */
+  var KPI_DEFS = [
+    { key:'active', label:'有効サブスク数', color:'var(--series-1)', isUpGood:true },
+    { key:'new',    label:'新規',           color:'var(--series-3)', isUpGood:true },
+    { key:'churn',  label:'解約',           color:'var(--series-8)', isUpGood:false },
+    { key:'mrr',    label:'MRR',            color:'var(--series-1)', isUpGood:true },
+    { key:'trial',  label:'トライアル転換率', color:'var(--series-7)', isUpGood:true }
+  ];
+
+  function buildKpiRow(){
+    var row = document.getElementById('kpiRow');
+    row.innerHTML = '';
+    KPI_DEFS.forEach(function(def){
+      var card = document.createElement('div');
+      card.className = 'stat-card';
+      card.id = 'stat-' + def.key;
+      card.innerHTML =
+        '<div class="stat-label">' + def.label + '</div>' +
+        '<div class="stat-value" id="statval-' + def.key + '"></div>' +
+        '<div class="stat-sub" id="statsub-' + def.key + '"></div>' +
+        '<div class="stat-foot">' +
+          '<span class="delta neutral" id="statdelta-' + def.key + '"></span>' +
+          '<span class="spark" id="statspark-' + def.key + '"></span>' +
+        '</div>';
+      row.appendChild(card);
+    });
+  }
+  buildKpiRow();
+
+  function renderDeltaEl(el, current, previous, isUpGood, mode){
+    if(previous == null){
+      el.innerHTML = '<span class="delta-vs">前期間データなし</span>';
+      el.className = 'delta neutral';
+      return;
+    }
+    var diff, text;
+    if(mode === 'pt'){
+      diff = current - previous;
+      text = (diff>=0?'+':'') + diff.toFixed(1) + 'pt';
+    } else {
+      if(previous === 0){ el.innerHTML='<span class="delta-vs">—</span>'; el.className='delta neutral'; return; }
+      diff = (current - previous) / Math.abs(previous) * 100;
+      text = (diff>=0?'+':'') + diff.toFixed(1) + '%';
+    }
+    var isGoodDir = (diff >= 0) === isUpGood;
+    var arrow = diff >= 0 ? '▲' : '▼';
+    if(Math.abs(diff) < 0.05){ el.className='delta neutral'; el.innerHTML = '± 0% <span class="delta-vs">前期間比</span>'; return; }
+    el.className = 'delta ' + (isGoodDir ? 'good' : 'bad');
+    el.innerHTML = arrow + ' ' + text + ' <span class="delta-vs">前期間比</span>';
+  }
+
+  function updateKpis(segs){
+    var r = rangeIndices();
+    var pr = prevRangeIndices();
+
+    // active subs
+    var activeNow = valueAt(segs, 'active', r.endIdx);
+    var activePrev = pr ? valueAt(segs, 'active', pr.endIdx) : null;
+    document.getElementById('statval-active').textContent = fmtCompactJP(activeNow);
+    document.getElementById('statsub-active').textContent = fmtInt(activeNow) + ' 件';
+    renderDeltaEl(document.getElementById('statdelta-active'), activeNow, activePrev, true);
+    renderSparkline(document.getElementById('statspark-active'), seriesSum(segs,'active',r), 'var(--series-1)');
+
+    // new
+    var newNow = sumMetric(segs,'newv',r);
+    var newPrev = pr ? sumMetric(segs,'newv',pr) : null;
+    document.getElementById('statval-new').textContent = fmtCompactJP(newNow);
+    document.getElementById('statsub-new').textContent = '期間合計';
+    renderDeltaEl(document.getElementById('statdelta-new'), newNow, newPrev, true);
+    renderSparkline(document.getElementById('statspark-new'), seriesSum(segs,'newv',r), 'var(--series-3)');
+
+    // churn
+    var churnNow = sumMetric(segs,'churn',r);
+    var churnPrev = pr ? sumMetric(segs,'churn',pr) : null;
+    var periodLen = r.endIdx-r.startIdx+1;
+    var avgActive = 0; for(var i=r.startIdx;i<=r.endIdx;i++){ avgActive += valueAt(segs,'active',i); } avgActive /= periodLen;
+    var churnRateMonthly = avgActive>0 ? (churnNow/avgActive) * (30/periodLen) * 100 : 0;
+    document.getElementById('statval-churn').textContent = fmtCompactJP(churnNow);
+    document.getElementById('statsub-churn').textContent = '月次換算解約率 ' + fmtPct(churnRateMonthly,2);
+    renderDeltaEl(document.getElementById('statdelta-churn'), churnNow, churnPrev, false);
+    renderSparkline(document.getElementById('statspark-churn'), seriesSum(segs,'churn',r), 'var(--series-8)');
+
+    // mrr
+    var mrrNow = valueAt(segs,'mrr',r.endIdx);
+    var mrrPrev = pr ? valueAt(segs,'mrr',pr.endIdx) : null;
+    document.getElementById('statval-mrr').textContent = fmtYen(mrrNow);
+    document.getElementById('statsub-mrr').textContent = fmtYenFull(mrrNow);
+    renderDeltaEl(document.getElementById('statdelta-mrr'), mrrNow, mrrPrev, true);
+    renderSparkline(document.getElementById('statspark-mrr'), seriesSum(segs,'mrr',r), 'var(--series-1)');
+
+    // trial conversion
+    var tStartNow = sumMetric(segs,'trialStart',r);
+    var tConvNow = sumMetric(segs,'trialConv',r);
+    var convNow = tStartNow>0 ? tConvNow/tStartNow*100 : 0;
+    var convPrev = null;
+    if(pr){
+      var tStartPrev = sumMetric(segs,'trialStart',pr);
+      var tConvPrev = sumMetric(segs,'trialConv',pr);
+      convPrev = tStartPrev>0 ? tConvPrev/tStartPrev*100 : null;
+    }
+    document.getElementById('statval-trial').textContent = fmtPct(convNow,1);
+    document.getElementById('statsub-trial').textContent = fmtInt(tConvNow) + ' / ' + fmtInt(tStartNow) + ' 件';
+    renderDeltaEl(document.getElementById('statdelta-trial'), convNow, convPrev, true, 'pt');
+    var convSeries = [];
+    for(var d2=r.startIdx; d2<=r.endIdx; d2++){
+      var ts = valueAt(segs,'trialStart',d2), tc = valueAt(segs,'trialConv',d2);
+      convSeries.push(ts>0 ? tc/ts*100 : 0);
+    }
+    renderSparkline(document.getElementById('statspark-trial'), convSeries, 'var(--series-7)');
+  }
+
+  /* ============================== MAIN RENDER ============================== */
+  var RANGE_LABEL = { '7':'過去7日間', '30':'過去30日間', '90':'過去90日間', '180':'過去180日間', '365':'過去1年間', 'all':'全期間（過去2年間）' };
+
+  function currentFilterLabel(){
+    var parts = [];
+    parts.push(state.platform==='all' ? 'OS: すべて' : 'OS: ' + PLATFORM_LABEL[state.platform]);
+    parts.push(state.plan==='all' ? 'プラン: すべて' : 'プラン: ' + PLAN_LABEL[state.plan]);
+    return parts.join(' / ');
+  }
+
+  function renderAll(){
+    var segs = activeSegments();
+    var r = rangeIndices();
+    var dSlice = DATES.slice(r.startIdx, r.endIdx+1);
+
+    document.getElementById('updatedNote').textContent = '最終更新: ' + fmtDateFull(DATA_END) + '（' + RANGE_LABEL[state.rangeKey] + ' / ' + currentFilterLabel() + '）';
+
+    updateKpis(segs);
+
+    if(segs.length === 0){
+      ['active','breakdown','newchurn','mrr','trial'].forEach(function(id){
+        document.getElementById('chart-'+id).innerHTML = '<div class="empty-note">該当するデータがありません</div>';
+      });
+      return;
+    }
+
+    /* --- active subscriptions trend (stacked by platform, or plan, or single) --- */
+    var dimMode = state.platform === 'all' ? 'platform' : (state.plan === 'all' ? 'plan' : 'none');
+    var activeSeriesList;
+    if(dimMode === 'platform'){
+      var plats = ['ios','android'].filter(function(p){ return segs.some(function(s){return s.platform===p;}); });
+      activeSeriesList = plats.map(function(p){
+        var psegs = segs.filter(function(s){return s.platform===p;});
+        return { key:p, label:PLATFORM_LABEL[p], color:PLATFORM_COLOR[p], values: seriesSum(psegs,'active',r) };
+      });
+    } else if(dimMode === 'plan'){
+      var plans = ['monthly','annual'].filter(function(p){ return segs.some(function(s){return s.plan===p;}); });
+      activeSeriesList = plans.map(function(p){
+        var psegs = segs.filter(function(s){return s.plan===p;});
+        return { key:p, label:PLAN_LABEL[p], color:PLAN_COLOR[p], values: seriesSum(psegs,'active',r) };
+      });
+    } else {
+      activeSeriesList = [{ key:segs[0].key, label:segs[0].label, color:SEG_COLOR[segs[0].key], values: seriesSum(segs,'active',r) }];
+    }
+    document.getElementById('activeSub').textContent = RANGE_LABEL[state.rangeKey] + 'の有効サブスク数の推移（' + (activeSeriesList.length>1 ? (dimMode==='platform'?'OS別':'プラン別') : segs[0].label) + '）';
+    buildLegend('legend-active', activeSeriesList.map(function(s){ return {label:s.label, color:s.color}; }));
+    renderTimeSeries('chart-active', dSlice, activeSeriesList, { stacked: activeSeriesList.length>1 });
+    renderTable('table-active', ['日付'].concat(activeSeriesList.map(function(s){return s.label;})), dSlice.map(function(dt,i){
+      return [fmtDateFull(dt)].concat(activeSeriesList.map(function(s){ return fmtInt(s.values[i]); }));
+    }));
+
+    /* --- breakdown --- */
+    document.getElementById('breakdownSub').textContent = fmtDateFull(DATES[r.endIdx]) + ' 時点の構成';
+    renderBreakdown('chart-breakdown', segs);
+
+    /* --- new / churn grouped bar --- */
+    var bmode = bucketConfig(rangeDays());
+    var buckets = buildBuckets(r, bmode);
+    var newSeries = buckets.map(function(b){ return bucketSum(segs,'newv',b); });
+    var churnSeries = buckets.map(function(b){ return bucketSum(segs,'churn',b); });
+    var ncSeriesList = [
+      { key:'new', label:'新規', color:'var(--series-1)', values:newSeries },
+      { key:'churn', label:'解約', color:'var(--series-8)', values:churnSeries }
+    ];
+    var bmodeLabel = bmode==='daily'?'日次':bmode==='weekly'?'週次':'月次';
+    document.getElementById('newchurnSub').textContent = bmodeLabel + '集計';
+    buildLegend('legend-newchurn', ncSeriesList.map(function(s){return {label:s.label,color:s.color};}));
+    renderGroupedBar('chart-newchurn', buckets, ncSeriesList);
+    renderTable('table-newchurn', ['期間','新規','解約','純増'], buckets.map(function(b,i){
+      return [b.label, fmtInt(newSeries[i]), fmtInt(churnSeries[i]), fmtInt(newSeries[i]-churnSeries[i])];
+    }));
+
+    /* --- MRR trend --- */
+    var mrrValues = seriesSum(segs,'mrr',r);
+    renderTimeSeries('chart-mrr', dSlice, [{ key:'mrr', label:'MRR', color:'var(--series-1)', values:mrrValues }], { axisFmt: fmtYen, tooltipFmt: fmtYenFull });
+    renderTable('table-mrr', ['日付','MRR'], dSlice.map(function(dt,i){ return [fmtDateFull(dt), fmtYenFull(mrrValues[i])]; }));
+
+    /* --- trial conversion trend --- */
+    var trialConvPct = [];
+    for(var i2=r.startIdx;i2<=r.endIdx;i2++){
+      var ts = valueAt(segs,'trialStart',i2), tc = valueAt(segs,'trialConv',i2);
+      trialConvPct.push(ts>0 ? tc/ts*100 : 0);
+    }
+    renderTimeSeries('chart-trial', dSlice, [{ key:'trial', label:'転換率', color:'var(--series-7)', values:trialConvPct }], { axisFmt:function(v){return v.toFixed(0)+'%';}, tooltipFmt:function(v){return v.toFixed(1)+'%';} });
+    renderTable('table-trial', ['日付','転換率'], dSlice.map(function(dt,i){ return [fmtDateFull(dt), trialConvPct[i].toFixed(1)+'%']; }));
+  }
+
+  /* ============================== FILTER EVENTS ============================== */
+  function bindSeg(containerId, attr, stateKey){
+    var el = document.getElementById(containerId);
+    el.addEventListener('click', function(e){
+      var btn = e.target.closest('button[data-' + attr + ']');
+      if(!btn) return;
+      state[stateKey] = btn.getAttribute('data-' + attr);
+      el.querySelectorAll('button').forEach(function(b){ b.classList.toggle('active', b===btn); });
+      renderAll();
+    });
+  }
+  bindSeg('rangeSeg', 'range', 'rangeKey');
+  bindSeg('platformSeg', 'platform', 'platform');
+  bindSeg('planSeg', 'plan', 'plan');
+
+  document.querySelectorAll('.table-toggle').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var target = btn.getAttribute('data-target');
+      var card = document.getElementById('card-' + target);
+      var showing = card.classList.toggle('showing-table');
+      btn.classList.toggle('active', showing);
+      btn.textContent = showing ? 'グラフで見る' : '表で見る';
+    });
+  });
+
+  renderAll();
+})();
+</script>
+
+</body>
+</html>
